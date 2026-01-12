@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pruebas API Comentarios</title>
+    <style>
+      :root {
+        --bg: #f7f9fc;
+        --card: #fff;
+        --accent: #0b74de;
+        --muted: #666;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+        margin: 0;
+        background: var(--bg);
+        color: #111;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 24px auto;
+        padding: 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      h1 {
+        font-size: 1.1rem;
+        margin: 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .card {
+        background: var(--card);
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(12, 20, 30, 0.06);
+      }
+      button {
+        appearance: none;
+        border: 0;
+        background: var(--accent);
+        color: white;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #666;
+      }
+      label {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #e3e7ee;
+        margin-top: 6px;
+      }
+      pre {
+        background: #0f1724;
+        color: #e6eef8;
+        padding: 12px;
+        border-radius: 8px;
+        overflow: auto;
+        font-size: 0.85rem;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      @media (max-width: 520px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Pruebas de la API: /comentarios</h1>
+        <div class="muted">
+          Este fichero realiza llamadas a los endpoints de Comentarios y muestra
+          comprobaciones básicas.
+        </div>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <div class="row">
+            <div style="flex: 1">
+              <label>Rellena 20</label>
+              <div class="muted">
+                Llena 20 registros y luego comprueba que count == 20
+              </div>
+            </div>
+            <div><button id="btnFill20">Rellena 20</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div style="flex: 1">
+              <label>Empty</label>
+              <div class="muted">Vacía la tabla y comprueba que count == 0</div>
+            </div>
+            <div><button id="btnEmpty" class="secondary">Empty</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div style="flex: 1">
+              <label>Rellena 100</label>
+              <div class="muted">
+                Llena 100 registros (no comprueba nada automáticamente)
+              </div>
+            </div>
+            <div><button id="btnFill100">Rellena 100</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <label>Get by id</label>
+          <input
+            id="inputGetId"
+            type="number"
+            placeholder="id a obtener (ej. 1)"
+          />
+          <div style="margin-top: 8px" class="row">
+            <button id="btnGet">Get(id) y comprobar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <label>Get page</label>
+          <div class="muted">
+            Obtener una página: size=11 página=1 (index basada en 0, aquí se
+            usará page=1 según petición)
+          </div>
+          <div style="margin-top: 8px" class="row">
+            <input id="inputPage" type="number" value="1" min="0" />
+            <input id="inputSize" type="number" value="11" min="1" />
+            <button id="btnGetPage">GetPage</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <label>Create → Update → Delete</label>
+          <div class="muted">
+            Crea un comentario (campos: contenido, id_articulo, id_usuario), lo
+            actualiza y luego lo borra.
+          </div>
+          <div style="margin-top: 8px" class="row">
+            <textarea id="createContenido" placeholder="Contenido inicial">
+Prueba comentario API</textarea
+            >
+          </div>
+          <div style="margin-top: 8px" class="row">
+            <input id="createIdArticulo" type="number" value="1" />
+            <input id="createIdUsuario" type="number" value="1" />
+          </div>
+          <div style="margin-top: 8px">
+            <button id="btnCreateUpdateDelete">
+              Ejecutar proceso completo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section style="margin-top: 16px" class="card">
+        <h3 style="margin: 0 0 8px 0">Logs / Resultados</h3>
+        <pre id="log">Listo.</pre>
+      </section>
+
+      <p class="muted" style="margin-top: 12px">
+        Notas: Asume que el backend está disponible en la misma origen bajo
+        <code>/comentarios</code>. Para <strong>create</strong> uso valores por
+        defecto para id_articulo e id_usuario — si esos FK no existen, la
+        creación puede fallar.
+      </p>
+    </div>
+
+    <script>
+      //const baseUrl = window.location.origin + "/comentarios";
+      const baseUrl = "http://localhost:8089/comentarios";
+      const logEl = document.getElementById("log");
+      function log(...args) {
+        const t = args
+          .map((a) =>
+            typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
+          )
+          .join(" ");
+        logEl.textContent = t + "\n\n" + logEl.textContent;
+      }
+
+      async function api(path, options) {
+        try {
+          const res = await fetch(
+            baseUrl + path,
+            Object.assign(
+              { headers: { "Content-Type": "application/json" } },
+              options
+            )
+          );
+          const text = await res.text();
+          let data = text && text.length ? JSON.parse(text) : null;
+          if (!res.ok) throw { status: res.status, body: data || text };
+          return data;
+        } catch (err) {
+          throw err;
+        }
+      }
+
+      document
+        .getElementById("btnFill20")
+        .addEventListener("click", async () => {
+          log("Iniciando rellena/20...");
+          try {
+            const filled = await api("/rellena/20", { method: "GET" });
+            log("rellena/20 response:", filled);
+            const count = await api("/count", { method: "GET" });
+            log("count after rellena/20:", count);
+            if (count === 20) log("OK: count == 20");
+            else log("FALLO: count != 20 (valor actual: " + count + ")");
+          } catch (e) {
+            log("Error en rellena20:", e);
+          }
+        });
+
+      document
+        .getElementById("btnEmpty")
+        .addEventListener("click", async () => {
+          log("Iniciando empty...");
+          try {
+            const emptied = await api("/empty", { method: "DELETE" });
+            log("empty response:", emptied);
+            const count = await api("/count", { method: "GET" });
+            log("count after empty:", count);
+            if (count === 0) log("OK: count == 0");
+            else log("FALLO: count != 0 (valor actual: " + count + ")");
+          } catch (e) {
+            log("Error en empty:", e);
+          }
+        });
+
+      document
+        .getElementById("btnFill100")
+        .addEventListener("click", async () => {
+          log("Iniciando rellena/100...");
+          try {
+            const filled = await api("/rellena/100", { method: "GET" });
+            log("rellena/100 response:", filled);
+            const count = await api("/count", { method: "GET" });
+            log("count after rellena/100:", count);
+          } catch (e) {
+            log("Error en rellena100:", e);
+          }
+        });
+
+      document.getElementById("btnGet").addEventListener("click", async () => {
+        const id = Number(document.getElementById("inputGetId").value);
+        if (!id && id !== 0) {
+          log("Introduce un id válido");
+          return;
+        }
+        log("GET /comentarios/" + id);
+        try {
+          const data = await api("/" + id, { method: "GET" });
+          log("GET result:", data);
+          if (data && data.id === id)
+            log("OK: id devuelto coincide con el solicitado");
+          else log("FALLO: id devuelto no coincide");
+        } catch (e) {
+          log("Error en GET:", e);
+        }
+      });
+
+      document
+        .getElementById("btnGetPage")
+        .addEventListener("click", async () => {
+          const page = Number(document.getElementById("inputPage").value || 1);
+          const size = Number(document.getElementById("inputSize").value || 11);
+          log(`GET page=${page} size=${size}`);
+          try {
+            const data = await api(`?page=${page}&size=${size}`, {
+              method: "GET",
+            });
+            log("Page response meta:", {
+              totalElements: data.totalElements,
+              number: data.number,
+              size: data.size,
+            });
+            const content = data.content || [];
+            log(
+              "content length:",
+              content.length,
+              "ids:",
+              content.map((c) => c.id)
+            );
+            if (content.length === size)
+              log("OK: page contiene " + size + " registros");
+            else
+              log(
+                "FALLO: page contiene " +
+                  content.length +
+                  " registros (se esperaba " +
+                  size +
+                  ")"
+              );
+            const ids = content.map((c) => c.id).filter((x) => x != null);
+            const sorted = [...ids].sort((a, b) => a - b);
+            if (JSON.stringify(ids) === JSON.stringify(sorted))
+              log("OK: ids en orden ascendente");
+            else log("Aviso: ids no están ordenados ascendentemente");
+          } catch (e) {
+            log("Error en getPage:", e);
+          }
+        });
+
+      document
+        .getElementById("btnCreateUpdateDelete")
+        .addEventListener("click", async () => {
+          try {
+            const contenido =
+              document.getElementById("createContenido").value ||
+              "Prueba comentario API";
+            const id_articulo =
+              Number(document.getElementById("createIdArticulo").value) || 1;
+            const id_usuario =
+              Number(document.getElementById("createIdUsuario").value) || 1;
+            log(
+              "Iniciando CREATE comentario con id_articulo=" +
+                id_articulo +
+                " id_usuario=" +
+                id_usuario
+            );
+            const createPayload = { contenido, id_articulo, id_usuario };
+            const created = await api("", {
+              method: "POST",
+              body: JSON.stringify(createPayload),
+            });
+            log("CREATE result:", created);
+
+            // backend devuelve solo el id (Long) o un objeto; manejar ambos casos
+            let newId = null;
+            if (created == null) {
+              log("FALLO: create no devolvió id");
+              return;
+            }
+            if (typeof created === "number" || typeof created === "string") {
+              newId = Number(created);
+            } else if (created.id != null) {
+              newId = Number(created.id);
+            } else {
+              log("FALLO: respuesta de create inesperada:", created);
+              return;
+            }
+
+            log("OK: creado id=" + newId);
+
+            // Update: construir payload explícito incluyendo el id para evitar enviar id=null
+            const updatedPayload = {
+              id: newId,
+              contenido: contenido + " - UPDATED",
+              id_articulo: id_articulo,
+              id_usuario: id_usuario,
+            };
+            log("Executing UPDATE for id=" + newId);
+            const updated = await api("", {
+              method: "PUT",
+              body: JSON.stringify(updatedPayload),
+            });
+            log("UPDATE result:", updated);
+
+            // Comprobar cambio
+            const after = await api("/" + newId, { method: "GET" });
+            log("GET after update:", after);
+            if (after && after.contenido === updatedPayload.contenido)
+              log("OK: contenido actualizado correctamente");
+            else log("FALLO: contenido no actualizado");
+
+            // Delete
+            log("Deleting id=" + newId);
+            const del = await api("/" + newId, { method: "DELETE" });
+            log("DELETE result:", del);
+            try {
+              await api("/" + newId, { method: "GET" });
+              log("FALLO: registro aun existe despues de delete");
+            } catch (err) {
+              if (err && err.status === 404)
+                log("OK: registro eliminado y GET devuelve 404");
+              else
+                log("OK (o fallo no 404): respuesta al comprobar delete:", err);
+            }
+          } catch (e) {
+            log("Error en proceso Create/Update/Delete:", e);
+          }
+        });
+    </script>
+  </body>
+</html>
