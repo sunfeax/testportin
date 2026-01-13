@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pruebas API Partido</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #fff;
+      --accent: #0b74de;
+      --muted: #666;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: #111;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(12, 20, 30, 0.06);
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      background: var(--accent);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #666;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #e3e7ee;
+      margin-top: 6px;
+    }
+
+    pre {
+      background: #0f1724;
+      color: #e6eef8;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+      font-size: 0.85rem;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    @media (max-width: 520px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Pruebas de la API: /partido</h1>
+      <div class="muted">
+        Este fichero realiza llamadas a los endpoints de Partido y muestra
+        comprobaciones básicas.
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <div style="flex: 1">
+            <label>Fill 20</label>
+            <div class="muted">
+              Llena 20 registros y luego comprueba que count == 20
+            </div>
+          </div>
+          <div><button id="btnFill20">Fill 20</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div style="flex: 1">
+            <label>Empty</label>
+            <div class="muted">Vacía la tabla y comprueba que count == 0</div>
+          </div>
+          <div><button id="btnEmpty" class="secondary">Empty</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div style="flex: 1">
+            <label>Fill 100</label>
+            <div class="muted">
+              Llena 100 registros (no comprueba nada automáticamente)
+            </div>
+          </div>
+          <div><button id="btnFill100">Fill 100</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Get by id</label>
+        <input id="inputGetId" type="number" placeholder="id a obtener (ej. 1)" />
+        <div style="margin-top: 8px" class="row">
+          <button id="btnGet">Get(id) y comprobar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Get page</label>
+        <div class="muted">
+          Obtener una página: size=11 página=1 (index basada en 0, aquí se
+          usará page=1 según petición)
+        </div>
+        <div style="margin-top: 8px" class="row">
+          <input id="inputPage" type="number" value="1" min="0" />
+          <input id="inputSize" type="number" value="11" min="1" />
+          <button id="btnGetPage">GetPage</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Create → Update (no FK) → Delete</label>
+        <div class="muted">
+          Crea un partido (POST inicial envía campos null/0 para obtener id),
+          luego actualiza con los valores proporcionados y finalmente lo borra.
+        </div>
+        <div style="margin-top: 8px" class="row">
+          <input id="createNombreRival" placeholder="Nombre del rival" value="Rival prueba" />
+        </div>
+        <div style="margin-top: 8px" class="row">
+          <input id="createIdEquipo" type="number" value="1" />
+          <label style="display:flex;align-items:center;gap:6px;">
+            <input id="createLocal" type="checkbox" checked /> Local
+          </label>
+        </div>
+        <div style="margin-top: 8px" class="row">
+          <input id="createResultado" placeholder="Resultado (ej. 1-0)" value="0-0" />
+        </div>
+        <div style="margin-top: 8px">
+          <button id="btnCreateUpdateDelete">
+            Ejecutar proceso completo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section style="margin-top: 16px" class="card">
+      <h3 style="margin: 0 0 8px 0">Logs / Resultados</h3>
+      <pre id="log">Listo.</pre>
+    </section>
+
+    <p class="muted" style="margin-top: 12px">
+      Notas: Asume que el backend está disponible en la misma origen bajo
+      <code>/partido</code>.
+    </p>
+  </div>
+
+  <script>
+    //const baseUrl = window.location.origin + "/articulo";
+    const baseUrl = "http://localhost:8089/partido";
+    const logEl = document.getElementById("log");
+    function log(...args) {
+      const t = args
+        .map((a) =>
+          typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
+        )
+        .join(" ");
+      logEl.textContent = t + "\n\n" + logEl.textContent;
+    }
+
+    async function api(path, options) {
+      try {
+        const res = await fetch(
+          baseUrl + path,
+          Object.assign(
+            { headers: { "Content-Type": "application/json" } },
+            options
+          )
+        );
+        const text = await res.text();
+        let data = text && text.length ? JSON.parse(text) : null;
+        if (!res.ok) throw { status: res.status, body: data || text };
+        return data;
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    // Fill 20 then count == 20
+    document
+      .getElementById("btnFill20")
+      .addEventListener("click", async () => {
+        log("Iniciando rellena/20...");
+        try {
+          const filled = await api("/rellena/20", { method: "GET" });
+          log("rellena/20 response:", filled);
+          const count = await api("/count", { method: "GET" });
+          log("count after rellena/20:", count);
+          if (count === 20) log("OK: count == 20");
+          else log("FALLO: count != 20 (valor actual: " + count + ")");
+        } catch (e) {
+          log("Error en rellena20:", e);
+        }
+      });
+
+    // Empty then count == 0
+    document
+      .getElementById("btnEmpty")
+      .addEventListener("click", async () => {
+        log("Iniciando empty...");
+        try {
+          const emptied = await api("/empty", { method: "DELETE" });
+          log("empty response:", emptied);
+          const count = await api("/count", { method: "GET" });
+          log("count after empty:", count);
+          if (count === 0) log("OK: count == 0");
+          else log("FALLO: count != 0 (valor actual: " + count + ")");
+        } catch (e) {
+          log("Error en empty:", e);
+        }
+      });
+
+    document
+      .getElementById("btnFill100")
+      .addEventListener("click", async () => {
+        log("Iniciando rellena/100...");
+        try {
+          const filled = await api("/rellena/100", { method: "GET" });
+          log("rellena/100 response:", filled);
+          const count = await api("/count", { method: "GET" });
+          log("count after rellena/100:", count);
+        } catch (e) {
+          log("Error en rellena100:", e);
+        }
+      });
+
+    document.getElementById("btnGet").addEventListener("click", async () => {
+      const id = Number(document.getElementById("inputGetId").value);
+      if (!id && id !== 0) {
+        log("Introduce un id válido");
+        return;
+      }
+      log("GET /partido/" + id);
+      try {
+        const data = await api("/" + id, { method: "GET" });
+        log("GET result:", data);
+        if (data && data.id === id)
+          log("OK: id devuelto coincide con el solicitado");
+        else log("FALLO: id devuelto no coincide");
+      } catch (e) {
+        log("Error en GET:", e);
+      }
+    });
+
+    document
+      .getElementById("btnGetPage")
+      .addEventListener("click", async () => {
+        const page = Number(document.getElementById("inputPage").value || 1);
+        const size = Number(document.getElementById("inputSize").value || 11);
+        log(`GET page=${page} size=${size}`);
+        try {
+          const data = await api(`?page=${page}&size=${size}`, {
+            method: "GET",
+          });
+          log("Page response meta:", {
+            totalElements: data.totalElements,
+            number: data.number,
+            size: data.size,
+          });
+          const content = data.content || [];
+          log(
+            "content length:",
+            content.length,
+            "ids:",
+            content.map((c) => c.id)
+          );
+          if (content.length === size)
+            log("OK: page contiene " + size + " registros");
+          else
+            log(
+              "FALLO: page contiene " +
+              content.length +
+              " registros (se esperaba " +
+              size +
+              ")"
+            );
+          // comprobación simple: ids ordenados ascendentemente
+          const ids = content.map((c) => c.id).filter((x) => x != null);
+          const sorted = [...ids].sort((a, b) => a - b);
+          if (JSON.stringify(ids) === JSON.stringify(sorted))
+            log("OK: ids en orden ascendente");
+          else log("Aviso: ids no están ordenados ascendentemente");
+        } catch (e) {
+          log("Error en getPage:", e);
+        }
+      });
+
+    document
+      .getElementById("btnCreateUpdateDelete")
+      .addEventListener("click", async () => {
+        try {
+          // Valores que queremos en la UPDATE (leídos del formulario)
+          const nombre_rival =
+            (document.getElementById("createNombreRival") &&
+              document.getElementById("createNombreRival").value) ||
+            "Rival prueba";
+          const id_equipo =
+            Number(
+              (document.getElementById("createIdEquipo") &&
+                document.getElementById("createIdEquipo").value) ||
+              1
+            ) || 1;
+          let localEl = document.getElementById("createLocal");
+          let local = true;
+          if (localEl) {
+            if (localEl.type === "checkbox") local = !!localEl.checked;
+            else local = localEl.value === "true" || localEl.value === "1";
+          }
+          const resultado =
+            (document.getElementById("createResultado") &&
+              document.getElementById("createResultado").value) ||
+            "0-0";
+
+          log(
+            "Iniciando proceso: RELLENA/1 -> GET (obtener id) -> PUT (valores) -> GET -> DELETE"
+          );
+
+          // Usar rellena/1 para crear un partido con valores válidos
+          const countBefore = await api("/count", { method: "GET" });
+          log("Count antes de crear:", countBefore);
+
+          await api("/rellena/1", { method: "GET" });
+          log("Partido creado con rellena/1");
+
+          // Obtener el último partido creado
+          const page = await api("?page=0&size=1&sort=id,desc", { method: "GET" });
+          if (!page.content || page.content.length === 0) {
+            log("FALLO: no se pudo obtener el partido recién creado");
+            return;
+          }
+          const newId = page.content[0].id;
+          log("OK: partido creado con id=" + newId);
+
+          // PUT update: ahora enviamos los valores reales (incluyendo id)
+          const updatedPayload = {
+            id: newId,
+            nombre_rival: nombre_rival,
+            id_equipo: id_equipo,
+            local: local,
+            resultado: resultado,
+          };
+          log("Executing UPDATE for id=" + newId, updatedPayload);
+          const updated = await api("", {
+            method: "PUT",
+            body: JSON.stringify(updatedPayload),
+          });
+          log("UPDATE result (id retornado):", updated);
+
+          // Comprobar que los campos han cambiado
+          const after = await api("/" + newId, { method: "GET" });
+          log("GET after update:", after);
+          let okUpdate = true;
+          if (after.nombre_rival !== updatedPayload.nombre_rival) {
+            okUpdate = false;
+            log("FALLO: nombre_rival no actualizado");
+          }
+          if (Number(after.id_equipo) !== Number(id_equipo)) {
+            okUpdate = false;
+            log(
+              "FALLO: id_equipo no actualizado - esperado " +
+              id_equipo +
+              " recibido " +
+              after.id_equipo
+            );
+          }
+          if (Boolean(after.local) !== Boolean(updatedPayload.local)) {
+            okUpdate = false;
+            log(
+              "FALLO: local no actualizado (esperado " +
+              updatedPayload.local +
+              " recibido " +
+              after.local +
+              ")"
+            );
+          }
+          if (after.resultado !== updatedPayload.resultado) {
+            okUpdate = false;
+            log("FALLO: resultado no actualizado");
+          }
+          if (okUpdate) log("OK: campos actualizados correctamente");
+
+          // Delete
+          log("Deleting id=" + newId);
+          const del = await api("/" + newId, { method: "DELETE" });
+          log("DELETE result (id eliminado):", del);
+
+          // Comprobar no existe
+          try {
+            await api("/" + newId, { method: "GET" });
+            log("FALLO: registro aun existe despues de delete");
+          } catch (err) {
+            if (err && err.status === 404)
+              log("OK: registro eliminado y GET devuelve 404");
+            else
+              log("OK (o fallo no 404): respuesta al comprobar delete:", err);
+          }
+        } catch (e) {
+          log("Error en proceso Create/Update/Delete:", e);
+        }
+      });
+  </script>
+</body>
+
+</html>
