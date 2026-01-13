@@ -169,7 +169,7 @@
         <div class="card">
           <label>Create → Update (no FK) → Delete</label>
           <div class="muted">
-            Crea una puntuación (usa idUsuario=1 e idArticulo=1 por defecto), la actualiza (campos no FK) y luego la borra.
+            Crea una puntuación (usa idUsuario=1 e idArticulo=1 por defecto), la actualiza (campo puntuacion) y luego la borra.
           </div>
           <div style="margin-top: 8px" class="row">
             <input
@@ -179,11 +179,6 @@
               value="5"
               min="1"
               max="5"
-            />
-            <input
-              id="createComentario"
-              placeholder="Comentario inicial"
-              value="Excelente"
             />
           </div>
           <div style="margin-top: 8px" class="row">
@@ -357,19 +352,14 @@
             // Crear
             const puntuacion =
               Number(document.getElementById("createPuntuacion").value) || 5;
-            const comentario =
-              document.getElementById("createComentario").value || "Excelente";
             const idUsuario =
               Number(document.getElementById("createIdUsuario").value) || 1;
             const idArticulo =
               Number(document.getElementById("createIdArticulo").value) || 1;
-            const fecha = new Date().toISOString().split('T')[0];
             
-            log("Iniciando CREATE con idUsuario=" + idUsuario + " idArticulo=" + idArticulo);
+            log("Iniciando CREATE con puntuacion=" + puntuacion + " idUsuario=" + idUsuario + " idArticulo=" + idArticulo);
             const createPayload = {
               puntuacion,
-              comentario,
-              fecha,
               idUsuario,
               idArticulo
             };
@@ -388,38 +378,35 @@
             const created = await api("/" + createdId, { method: "GET" });
             log("GET after create:", created);
 
-            // Update: cambiar campos no FK
+            // Update: cambiar campo puntuacion (no FK)
+            const newPuntuacion = puntuacion === 5 ? 4 : 5;
             const updatedPayload = Object.assign({}, created, {
-              puntuacion: puntuacion === 5 ? 4 : 5,
-              comentario: comentario + " - UPDATED",
-              fecha: new Date().toISOString().split('T')[0]
+              puntuacion: newPuntuacion
             });
-            log("Executing UPDATE for id=" + createdId);
+            log("Executing UPDATE for id=" + createdId + " (cambiar puntuacion a " + newPuntuacion + ")");
             const updated = await api("", {
               method: "PUT",
               body: JSON.stringify(updatedPayload),
             });
             log("UPDATE result:", updated);
 
-            // Comprobar que los campos han cambiado (no FK)
+            // Comprobar que el campo ha cambiado (no FK)
             const after = await api("/" + createdId, { method: "GET" });
             log("GET after update:", after);
             let okUpdate = true;
-            if (after.comentario !== updatedPayload.comentario) {
-              okUpdate = false;
-              log("FALLO: comentario no actualizado");
-            }
-            if (Number(after.puntuacion) !== Number(updatedPayload.puntuacion)) {
+            if (Number(after.puntuacion) !== Number(newPuntuacion)) {
               okUpdate = false;
               log(
                 "FALLO: puntuacion no actualizada (esperado " +
-                  updatedPayload.puntuacion +
+                  newPuntuacion +
                   " recibido " +
                   after.puntuacion +
                   ")"
               );
+            } else {
+              log("OK: puntuacion actualizada correctamente de " + puntuacion + " a " + newPuntuacion);
             }
-            if (okUpdate) log("OK: campos no FK actualizados correctamente");
+            if (okUpdate) log("OK: campo puntuacion (no FK) actualizado correctamente");
 
             // Delete
             log("Deleting id=" + createdId);
