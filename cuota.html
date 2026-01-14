@@ -156,17 +156,16 @@
         <div class="card">
           <label>Get page</label>
           <div class="muted">
-            Obtener una página: size=11 página=1 (index basada en 0, aquí se
-            usará page=1 según petición)
+            Obtener una página: el input es 1-based y se convierte a 0-based
+            para el backend
           </div>
           <div style="margin-top: 8px" class="row">
             <input id="inputPage" type="number" value="1" min="0" />
-            <input id="inputSize" type="number" value="11" min="1" />
+            <input id="inputSize" type="number" value="10" min="1" />
             <button id="btnGetPage">GetPage</button>
           </div>
         </div>
 
-        <!-- ✅ BLOQUE ACTUALIZADO PARA TUS COLUMNAS -->
         <div class="card">
           <label>Create → Update (no FK) → Delete</label>
           <div class="muted">
@@ -334,11 +333,17 @@
       document
         .getElementById("btnGetPage")
         .addEventListener("click", async () => {
-          const page = Number(document.getElementById("inputPage").value || 1);
-          const size = Number(document.getElementById("inputSize").value || 11);
-          log(`GET page=${page} size=${size}`);
+          const pageInputRaw = document.getElementById("inputPage").value;
+          const sizeInputRaw = document.getElementById("inputSize").value;
+          const pageInput =
+            pageInputRaw === "" ? 1 : Number(pageInputRaw || 1);
+          const size = sizeInputRaw === "" ? 10 : Number(sizeInputRaw || 10);
+          const apiPage = Math.max(0, pageInput - 1);
+          log(
+            `GET pageInput=${pageInput} -> apiPage=${apiPage} size=${size}`
+          );
           try {
-            const data = await api(`?page=${page}&size=${size}`, {
+            const data = await api(`?page=${apiPage}&size=${size}`, {
               method: "GET",
             });
             log("Page response meta:", {
@@ -353,14 +358,19 @@
               "ids:",
               content.map((c) => c.id)
             );
-            if (content.length === size)
-              log("OK: page contiene " + size + " registros");
+            const totalElements = Number(data.totalElements);
+            const hasTotal = Number.isFinite(totalElements);
+            const expected = hasTotal
+              ? Math.max(0, Math.min(size, totalElements - apiPage * size))
+              : size;
+            if (content.length === expected)
+              log("OK: page contiene " + expected + " registros");
             else
               log(
                 "FALLO: page contiene " +
                   content.length +
                   " registros (se esperaba " +
-                  size +
+                  expected +
                   ")"
               );
             const ids = content.map((c) => c.id).filter((x) => x != null);
