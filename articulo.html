@@ -158,7 +158,7 @@
         <div class="card">
           <label>Create → Update → Delete</label>
           <div class="muted">
-            Crea un artículo (usa idTipoarticulo=1, idClub=1 por defecto), lo actualiza (descripción, precio) y luego lo borra.
+            Crea un artículo (usa idTipoarticulo=1 por defecto), lo actualiza (descripción, precio) y luego lo borra.
           </div>
           <div style="margin-top: 8px">
             <label for="createDescripcion">Descripción</label>
@@ -189,12 +189,8 @@
             />
           </div>
           <div style="margin-top: 8px">
-            <label for="createIdTipoarticulo">ID Tipo Artículo</label>
+            <label for="createIdTipoarticulo">ID Tipo Artículo (requerido)</label>
             <input id="createIdTipoarticulo" type="number" value="1" />
-          </div>
-          <div style="margin-top: 8px">
-            <label for="createIdClub">ID Club</label>
-            <input id="createIdClub" type="number" value="1" />
           </div>
           <div style="margin-top: 8px">
             <button id="btnCreateUpdateDelete">
@@ -210,7 +206,7 @@
       </section>
 
       <p class="muted" style="margin-top: 12px">
-        Notas: Asume que el backend está disponible en <code>http://localhost:8089/articulo</code>. Para <strong>create</strong> se requieren idTipoarticulo e idClub — si esos FK no existen, la creación fallará.
+        Notas: Asume que el backend está disponible en <code>http://localhost:8089/articulo</code>. Para <strong>create</strong> se requieren descripción, precio e idTipoarticulo (FK). El descuento es opcional. La imagen se puede proporcionar como base64 en la API.
       </p>
     </div>
 
@@ -326,10 +322,14 @@
           const precio = Number(document.getElementById("createPrecio").value || 29.99);
           const descuento = Number(document.getElementById("createDescuento").value || 0);
           const idTipoarticulo = Number(document.getElementById("createIdTipoarticulo").value || 1);
-          const idClub = Number(document.getElementById("createIdClub").value || 1);
 
-          log('Iniciando CREATE (POST /articulo) con descripcion="' + descripcion + '"');
-          const createPayload = { descripcion, precio, descuento, idTipoarticulo, idClub };
+          if (!descripcion || !precio || !idTipoarticulo) {
+            log("FALLO: descripción, precio e idTipoarticulo son requeridos");
+            return;
+          }
+
+          log('Iniciando CREATE (POST /articulo) con descripcion="' + descripcion + '", precio=' + precio + ', idTipoarticulo=' + idTipoarticulo);
+          const createPayload = { descripcion, precio, descuento: descuento || null, idTipoarticulo };
           const created = await api("", {
             method: "POST",
             body: JSON.stringify(createPayload),
@@ -343,7 +343,14 @@
           const newId = created.id;
           log("OK: creado id=" + newId);
 
-          const updatedPayload = Object.assign({}, created, { descripcion: descripcion + " - UPDATED", precio: precio * 1.1 });
+          // Verificar que los campos se crearon correctamente
+          if (created.descripcion !== descripcion) log("Aviso: descripción no coincide");
+          if (created.precio !== precio) log("Aviso: precio no coincide");
+          if (created.idTipoarticulo !== idTipoarticulo) log("Aviso: idTipoarticulo no coincide");
+
+          const updatedDescripcion = descripcion + " - UPDATED";
+          const updatedPrecio = precio * 1.1;
+          const updatedPayload = Object.assign({}, created, { descripcion: updatedDescripcion, precio: updatedPrecio });
           log("Executing UPDATE for id=" + newId);
           const updated = await api("", {
             method: "PUT",
@@ -354,8 +361,11 @@
           const after = await api("/" + newId, { method: "GET" });
           log("GET after update:", after);
 
-          if (after && after.descripcion === updatedPayload.descripcion) log("OK: descripción actualizada correctamente");
-          else log("FALLO: descripción no actualizada");
+          if (after && after.descripcion === updatedDescripcion) log("OK: descripción actualizada correctamente");
+          else log("FALLO: descripción no actualizada (esperada: '" + updatedDescripcion + "', obtenida: '" + (after ? after.descripcion : 'null') + "')");
+
+          if (after && Math.abs(after.precio - updatedPrecio) < 0.01) log("OK: precio actualizado correctamente");
+          else log("FALLO: precio no actualizado correctamente");
 
           log("Deleting id=" + newId);
           const del = await api("/" + newId, { method: "DELETE" });

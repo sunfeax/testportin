@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: database:3306
--- Tiempo de generación: 26-01-2026 a las 10:20:00
+-- Tiempo de generación: 21-01-2026 a las 09:00:24
 -- Versión del servidor: 8.4.5
 -- Versión de PHP: 8.2.28
 
@@ -14,6 +14,9 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `gesportin`
 --
+
+CREATE DATABASE IF NOT EXISTS `gesportin` DEFAULT CHARACTER SET utf32 COLLATE utf32_unicode_ci;
+USE `gesportin`;
 
 -- --------------------------------------------------------
 
@@ -27,8 +30,7 @@ CREATE TABLE `articulo` (
   `precio` decimal(10,2) NOT NULL,
   `descuento` decimal(10,2) DEFAULT NULL,
   `imagen` longblob,
-  `id_tipoarticulo` bigint NOT NULL,
-  `id_club` bigint NOT NULL
+  `id_tipoarticulo` bigint NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf32 COLLATE=utf32_unicode_ci;
 
 -- --------------------------------------------------------
